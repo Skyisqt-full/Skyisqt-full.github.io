@@ -1,0 +1,28 @@
+{
+  "name": "artem-expo-deck",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/build.mjs && node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs --dist",
+    "build": "node scripts/build.mjs",
+    "export:cards": "node scripts/build.mjs && node scripts/export-cards.mjs && node scripts/contact-sheet.mjs",
+    "test": "node scripts/qa.mjs",
+    "export:cards:ru": "node scripts/build.mjs && node scripts/export-cards.mjs --ru",
+    "export:cards:en": "node scripts/build.mjs && node scripts/export-cards.mjs --en",
+    "contact-sheets": "node scripts/contact-sheet.mjs",
+    "audit:output": "node scripts/audit-output.mjs",
+    "test:production": "node scripts/qa-production.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
+    "jsqr": "1.4.0",
+    "playwright": "1.58.2",
+    "qrcode": "1.5.4",
+    "sharp": "0.35.5"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}
