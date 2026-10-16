@@ -31,6 +31,11 @@ async function decode(buffer){
  const {data,info}=await sharp(buffer).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  return jsQR(new Uint8ClampedArray(data),info.width,info.height)?.data;
 }
+async function pitchQR(page,label){
+ const images=await page.locator('.slide:not([hidden]) .qr-item img').all();
+ check('Three pitch QR codes '+label,images.length===3);
+ for(const [i,image]of images.entries())check('Pitch QR '+label+' '+i,await decode(await image.screenshot())===[profile.telegram,profile.github,profile.portfolio][i]);
+}
 try{
  for(const [width,height]of[[390,844],[393,852],[412,915],[430,932],[1440,900],[1920,1080]]){
   const context=await browser.newContext({viewport:{width,height},isMobile:width<500,hasTouch:width<500,reducedMotion:'reduce'});
@@ -67,8 +72,10 @@ try{
     }
    }
    await page.goto(new URL('?lang='+lang+'#pitch/1',base).href,{waitUntil:'networkidle'});await ready(page);
+   await pitchQR(page,width+' '+lang+' card 1');
    await page.locator('#next').click();check('Pitch next '+width+' '+lang,new URL(page.url()).hash==='#pitch/2');
    await page.locator('#to-contact').click();check('Pitch contact '+width+' '+lang,new URL(page.url()).hash==='#pitch/9');
+   await ready(page);await pitchQR(page,width+' '+lang+' card 9');
   }
   await context.close();
  }

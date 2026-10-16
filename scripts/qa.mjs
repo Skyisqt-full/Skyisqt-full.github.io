@@ -14,12 +14,17 @@ for(const dir of ['output/playwright','.impeccable/review'])await fs.mkdir(dir,{
 const server=serve(0);await new Promise(r=>server.once('listening',r));
 const base='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
 const errors=[];
+const qrTargets=[profile.telegram,profile.github,profile.portfolio];
 async function ready(p){await p.waitForFunction(()=>window.deckReady);await p.evaluate(async()=>{for(const i of document.images)if(i.getAttribute('src'))i.loading='eager';await document.fonts.ready;await Promise.all([...document.images].filter(i=>i.getAttribute('src')).map(i=>i.decode()))})}
 async function decode(file){const {data,info}=await sharp(file).ensureAlpha().raw().toBuffer({resolveWithObject:true});return jsQR(new Uint8ClampedArray(data),info.width,info.height)?.data}
 async function geometry(p){return p.evaluate(()=>{
  const issues=[],slide=document.querySelector('.slide:not([hidden])');
  if(!slide)return {scroll:document.documentElement.scrollWidth>innerWidth,issues};
  const rail=slide.querySelector('.card-rail').getBoundingClientRect(),stage=slide.getBoundingClientRect(),caption=slide.querySelector('.demo-capture-note');const textLimit=caption?caption.getBoundingClientRect().top-4:rail.top-3;
+ const codes=[...slide.querySelectorAll('.qr-item')];
+ if(codes.length!==3)issues.push({qrCount:codes.length});
+ for(const code of codes){const r=code.getBoundingClientRect();if(r.left<stage.left||r.right>stage.right||r.bottom>stage.bottom)issues.push({qrBounds:code.textContent})}
+ const pair=slide.querySelector('.card-rail .qr-pair');if(pair&&slide.querySelector('.rail-meta').getBoundingClientRect().right>pair.getBoundingClientRect().left-2)issues.push({qrRailOverlap:true});
  const walker=document.createTreeWalker(slide.querySelector('.card-body'),NodeFilter.SHOW_TEXT);
  let n;while(n=walker.nextNode()){if(!n.textContent.trim())continue;const range=document.createRange();range.selectNodeContents(n);for(const r of range.getClientRects())if(r.width&&r.height&&(r.left<stage.left-1||r.right>stage.right+1||r.bottom>textLimit||r.top<stage.top+14))issues.push({text:n.textContent.slice(0,80),rect:{left:r.left,right:r.right,bottom:r.bottom},rail:rail.top})}
  return {scroll:document.documentElement.scrollWidth>innerWidth,issues};
@@ -81,7 +86,7 @@ try{
  await fp.goto(pathToFileURL(path.resolve('exports/offline/portfolio-offline.html')).href);await ready(fp);
  for(const route of ['case/scada','case/pak','pitch/1','home']){await fp.evaluate(h=>location.hash=h,'#'+route);await ready(fp);check('file offline '+route,await fp.locator('main').count()===1)}
  check('standalone HTML needs no network',!outgoing.length,outgoing);await fc.close();
- for(const id of ['telegram','github'])check('QR asset '+id,await decode('exports/qr/'+id+'.png')===profile[id]);
+ for(const id of ['telegram','github','portfolio'])check('QR asset '+id,await decode('exports/qr/'+id+'.png')===profile[id]);
  const ep=await browser.newPage({viewport:{width:1080,height:1920},reducedMotion:'reduce'});
  for(const lang of ['ru','en'])for(let i=0;i<9;i++){
   const file='exports/cards-'+lang+'/'+String(i+1).padStart(2,'0')+'-'+slides[i].id+'.png',meta=await sharp(file).metadata();
@@ -89,14 +94,15 @@ try{
   await ep.goto(base+'/?export&lang='+lang+'&slide='+(i+1),{waitUntil:'networkidle'});await ready(ep);
   const g=await geometry(ep);check('export bounds '+lang+' '+(i+1),!g.scroll&&!g.issues.length,g);
   const rects=await ep.locator('.slide:not([hidden]) .qr-item img').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}}));
+  check('Three export QR codes '+lang+' '+(i+1),rects.length===3);
   for(const [q,r]of rects.entries()){
    const extract={left:Math.round(r.x),top:Math.round(r.y),width:Math.round(r.width),height:Math.round(r.height)};
    const code=await sharp(file).extract(extract).png().toBuffer();
-   check('export QR '+lang+' '+(i+1)+' '+q,await decode(code)===profile[q?'github':'telegram']);
+   check('export QR '+lang+' '+(i+1)+' '+q,await decode(code)===qrTargets[q]);
   }
   await ep.setViewportSize({width:390,height:844});await ep.goto(base+'/?lang='+lang+'#pitch/'+(i+1),{waitUntil:'networkidle'});await ready(ep);
   for(const [q,el]of(await ep.locator('.slide:not([hidden]) .qr-item img').all()).entries()){
-   const shot=await el.screenshot();check('phone-size QR '+lang+' '+(i+1)+' '+q,await decode(shot)===profile[q?'github':'telegram']);
+   const shot=await el.screenshot();check('phone-size QR '+lang+' '+(i+1)+' '+q,await decode(shot)===qrTargets[q]);
   }
   await ep.setViewportSize({width:1080,height:1920});
  }

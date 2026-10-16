@@ -11,7 +11,7 @@ const dist=path.resolve('dist');
 if(path.dirname(dist)!==root||path.basename(dist)!=='dist')throw Error('Unsafe build output path');
 await fs.rm(dist,{recursive:true,force:true});
 for(const dest of ['dist','exports/qr','exports/offline','public/qr','public/icons'])await fs.mkdir(dest,{recursive:true});
-for(const [name,target] of [['telegram',profile.telegram],['github',profile.github]]){
+for(const [name,target] of [['telegram',profile.telegram],['github',profile.github],['portfolio',profile.portfolio]]){
  const url=new URL(target);if(url.protocol!=='https:'||/localhost|127\.|\.invalid/.test(url.hostname))throw Error('Invalid QR destination');
  await QRCode.toFile('exports/qr/'+name+'.png',target,{width:768,margin:4,errorCorrectionLevel:'M',color:{dark:'#17131f',light:'#ffffff'}});
  await recordOrigin('exports/qr/'+name+'.png','QR generated with qrcode from verified profile URL '+target+'; four-module quiet zone; M error correction.');
@@ -28,7 +28,7 @@ for(const f of (await fs.readdir('public/images')).filter(f=>f.endsWith('.webp')
  const key=path.parse(f).name;assets[key]='images/'+f;
  await recordOrigin('public/images/'+f,origins[key]||'Actual source product screenshot, isolated local demo; cropped by optimize-images.mjs, no generated UI.');
 }
-for(const key of ['telegram','github'])assets['qr-'+key]='qr/'+key+'.png';
+for(const key of ['telegram','github','portfolio'])assets['qr-'+key]='qr/'+key+'.png';
 for(const required of [...Object.values(details).flatMap(d=>d.images),...projects.map(p=>p.image)])if(!assets[required])throw Error('Missing screenshot: '+required);
 await fs.cp('public','dist',{recursive:true});
 const read=async file=>(await fs.readFile(file,'utf8')).replace(/\r\n/g,'\n');

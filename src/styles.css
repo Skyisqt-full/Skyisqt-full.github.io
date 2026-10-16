@@ -50,5 +50,9 @@ main:focus{outline:none}
 .export .contact-signature{margin-top:7cqw}
 .inspector-feature figcaption{top:25cqw}
 .inspector-feature .phone-shell{height:56cqw}
+.card-rail .qr-trio{flex-shrink:0}
+.contact-slide .qr-pair.qr-trio{gap:4cqw}
+.contact-slide .qr-pair.qr-trio .qr-item{width:26cqw}
+.contact-slide .qr-pair.qr-trio .qr-item>small{font-size:2.4cqw}
 
 
