@@ -37,7 +37,7 @@ try{
   const page=await context.newPage();watch(page);
   for(const lang of ['ru','en']){
    for(const route of ['home','case/scada','case/pak']){
-    const response=await page.goto(new URL('?lang='+lang+'#'+route,base).href,{waitUntil:'networkidle'});await ready(page);
+    const response=await page.goto(new URL('?lang='+lang+'#'+route,base).href,{waitUntil:'networkidle'})||await page.reload({waitUntil:'networkidle'});await ready(page);
     const label=width+'x'+height+' '+lang+' '+route;
     check('HTTPS document '+label,response.status()===200);
     check('Language '+label,await page.locator('html').getAttribute('lang')===lang);
